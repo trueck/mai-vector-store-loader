@@ -26,16 +26,16 @@ import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
 @SpringBootApplication
-public class Main {
+public class MaiVectorStoreLoaderApplication {
 
 
     private static final Logger LOGGER =
-            LoggerFactory.getLogger(Main.class);
+            LoggerFactory.getLogger(MaiVectorStoreLoaderApplication.class);
 
 
 
     public static void main(String[] args) {
-        SpringApplication.run(Main.class, args);
+        SpringApplication.run(MaiVectorStoreLoaderApplication.class, args);
     }
 
 
