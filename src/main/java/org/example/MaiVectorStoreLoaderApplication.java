@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 
+import org.springframework.messaging.Message;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
@@ -50,13 +51,29 @@ public class MaiVectorStoreLoaderApplication {
 
 
     @Bean
-    Function<Flux<byte[]>, Flux<Document>> documentReader() {
+    Function<Flux<Message<byte[]>>, Flux<Document>> documentReader() {
         return resourceFlux -> resourceFlux
-                .map(fileBytes ->
-                        new TikaDocumentReader(
-                                new ByteArrayResource(fileBytes))
-                                .get()
-                                .getFirst()).subscribeOn(Schedulers.boundedElastic());
+                .map(message -> {
+                    var fileName = (String) message.getHeaders().get("file_name");
+                    LOGGER.info("Reading document from file: {}", fileName);
+
+                    var fileBytes = message.getPayload();
+                    var document = new TikaDocumentReader(
+                            new ByteArrayResource(fileBytes))
+                            .get()
+                            .getFirst();
+                    if (isPremiumDocument(fileName)) {
+                        document.getMetadata().put("documentType", "PREMIUM");
+                    }
+                    return document;
+                })
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private boolean isPremiumDocument(String fileName) {
+        var baseFilename = fileName
+                .substring(0, fileName.toString().lastIndexOf('.'));
+        return baseFilename.endsWith("-premium");
     }
 
 
